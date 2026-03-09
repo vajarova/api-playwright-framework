@@ -2,11 +2,6 @@ import { test } from '../utils/fixtures';
 import { expect } from '../utils/custome-expect'
 import { createToken } from '../helpers/createToken';
 
-let authToken: string;
-
-test.beforeAll('get auth token', async ({ api, config }) => {
-  authToken = await createToken(config.userEmail, config.userPassword)
-})
 
 test('Get articles', async ({ api }) => {
   const response = await api
@@ -27,15 +22,7 @@ test('Get tags', async ({ api }) => {
 test('Create and delete article', async ({ api }) => {
   const createArticleResponse = await api
     .path('/articles')
-    .headers({ 'Authorization': authToken })
-    .body({
-      "article": {
-        "title": "post a new article",
-        "description": "yoo back at ya",
-        "body": "something in here",
-        "tagList": []
-      }
-    })
+    .body({"article": {"title": "post a new article","description": "yoo back at ya","body": "something in here","tagList": []}})
     .postRequest(201)
 
   expect(createArticleResponse.article.title).shouldEqual('post a new article')
@@ -44,14 +31,12 @@ test('Create and delete article', async ({ api }) => {
   const articlesResponse = await api
     .path("/articles")
     .params({ limit: 10, offset: 0 })
-    .headers({ 'Authorization': authToken })
     .getRequest(200)
 
   expect(articlesResponse.articles[0].title).shouldEqual("post a new article")
 
   const deleteArticleResponse = await api
     .path(`/articles/${articleSlugId}`)
-    .headers({ 'Authorization': authToken })
     .deleteRequest(204)
 })
 
