@@ -6,7 +6,7 @@ export class RequestHandler{
 
     private request: APIRequestContext
     private logger: APILogger
-    private baseUrl: string;
+    private baseUrl: string | undefined;
     private defaultUrl: string;
     private apiPath: string = '';
     private queryParams: object = {};
@@ -52,6 +52,7 @@ export class RequestHandler{
         const response = await this.request.get(url, {
             headers: this.apiHeaders
         })
+        this.cleanupFields()
 
         const actualStatus = response.status()
         const responseJson = await response.json()
@@ -70,6 +71,7 @@ export class RequestHandler{
             data: this.apiBody,
             headers: this.apiHeaders
         })
+        this.cleanupFields()
 
         const actualStatus = response.status()
         const responseJson = response.json()
@@ -89,6 +91,7 @@ export class RequestHandler{
             data: this.apiBody,
             headers: this.apiHeaders
         })
+        this.cleanupFields()
         const responseJson = response.json()
         const actualStatus = response.status()
 
@@ -107,6 +110,7 @@ export class RequestHandler{
         const response = await this.request.delete(url,{
             headers: this.apiHeaders
         })
+        this.cleanupFields()
         const actualStatus = response.status()
         //Use custom logger to log response
         this.logger.logResponse(actualStatus)
@@ -130,5 +134,14 @@ export class RequestHandler{
             Error.captureStackTrace(error, callingMethod)
             throw error
         }
+    }
+
+    private cleanupFields(){
+        this.apiBody = {}
+        this.queryParams = {}
+        this.apiHeaders = {}
+        this.baseUrl = undefined
+        this.apiPath = ''
+        
     }
 }
