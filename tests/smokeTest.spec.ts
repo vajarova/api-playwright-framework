@@ -3,10 +3,10 @@ import {expect} from '../utils/custome-expect'
 
 let authToken: string;
 
-test.beforeAll('get auth token', async ({api}) => {
+test.beforeAll('get auth token', async ({api, config}) => {
     const tokenResponse = await api
         .path('/users/login')
-        .body({ "user": { "email": "nv4test@test.com", "password": "1q2w3e4r5t6y7u8" } })
+        .body({ "user": { "email": config.userEmail, "password": config.userPassword } })
         .postRequest(200)
      authToken = `Token ${tokenResponse.user.token}`
 })
