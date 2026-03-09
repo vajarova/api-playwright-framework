@@ -1,8 +1,8 @@
 import { APIRequestContext } from "@playwright/test";
-import {expect} from '@playwright/test'
+import { expect } from '@playwright/test'
 import { APILogger } from "./logger";
 
-export class RequestHandler{
+export class RequestHandler {
 
     private request: APIRequestContext
     private logger: APILogger
@@ -13,39 +13,39 @@ export class RequestHandler{
     private apiHeaders: Record<string, string> = {};
     private apiBody: object = {};
 
-    constructor(request: APIRequestContext, apiBaseUrl: string, logger: APILogger){
+    constructor(request: APIRequestContext, apiBaseUrl: string, logger: APILogger) {
         this.request = request
         this.defaultUrl = apiBaseUrl
         this.logger = logger
     }
 
 
-    url(url: string){
+    url(url: string) {
         this.baseUrl = url;
         return this
     }
 
-    path(path: string){
+    path(path: string) {
         this.apiPath = path
         return this
     }
 
-    params(params: object){
+    params(params: object) {
         this.queryParams = params
         return this
     }
 
-    headers(headers: Record<string, string>){
+    headers(headers: Record<string, string>) {
         this.apiHeaders = headers
         return this
     }
 
-    body(body: object){
+    body(body: object) {
         this.apiBody = body
         return this
     }
 
-    async getRequest(statusCode: number){
+    async getRequest(statusCode: number) {
         const url = this.getUrl()
         //Use custom logger to capture request
         this.logger.logRequest("GET", url, this.apiHeaders, this.apiBody)
@@ -59,11 +59,11 @@ export class RequestHandler{
         //Use custom logger to capture response
         this.logger.logResponse(actualStatus, responseJson)
         //Use custom status code assertion
-        this.statusCodeValidator(actualStatus,statusCode,this.getRequest)
+        this.statusCodeValidator(actualStatus, statusCode, this.getRequest)
         return responseJson
     }
 
-    async postRequest(statusCode: number){
+    async postRequest(statusCode: number) {
         const url = this.getUrl()
         //Use custom logger to capture request
         this.logger.logRequest("POST", url, this.apiHeaders, this.apiBody)
@@ -75,9 +75,9 @@ export class RequestHandler{
 
         const actualStatus = response.status()
         const responseJson = response.json()
-        
+
         //Use custom logger to capture response
-        this.logger.logResponse(actualStatus,responseJson)
+        this.logger.logResponse(actualStatus, responseJson)
 
         this.statusCodeValidator(actualStatus, statusCode, this.postRequest)
         return responseJson
@@ -96,18 +96,18 @@ export class RequestHandler{
         const actualStatus = response.status()
 
         //Use custom logger to log response
-        this.logger.logResponse(actualStatus,responseJson)
+        this.logger.logResponse(actualStatus, responseJson)
 
         this.statusCodeValidator(actualStatus, statusCode, this.putRequest)
-        
+
         return responseJson
     }
 
-    async deleteRequest(statusCode: number){
+    async deleteRequest(statusCode: number) {
         const url = this.getUrl()
         //Use custom logger to log request
         this.logger.logRequest("DELETE", url, this.apiHeaders)
-        const response = await this.request.delete(url,{
+        const response = await this.request.delete(url, {
             headers: this.apiHeaders
         })
         this.cleanupFields()
@@ -116,19 +116,19 @@ export class RequestHandler{
         this.logger.logResponse(actualStatus)
 
         this.statusCodeValidator(actualStatus, statusCode, this.deleteRequest)
-        
+
     }
 
-    private getUrl(){
+    private getUrl() {
         const url = new URL(`${this.baseUrl ?? this.defaultUrl}${this.apiPath}`)
-        for(const [key, value] of Object.entries(this.queryParams)){
-            url.searchParams.append(key,value)
+        for (const [key, value] of Object.entries(this.queryParams)) {
+            url.searchParams.append(key, value)
         }
         return url.toString()
     }
 
-    private statusCodeValidator(actualStatus: number, expectedStatus: number, callingMethod:Function){
-        if(actualStatus !== expectedStatus){
+    private statusCodeValidator(actualStatus: number, expectedStatus: number, callingMethod: Function) {
+        if (actualStatus !== expectedStatus) {
             const logs = this.logger.getRecentLogs()
             const error = new Error(`Expected status ${expectedStatus} but got ${actualStatus} \n\n Recent API Activity: \n ${logs}`)
             Error.captureStackTrace(error, callingMethod)
@@ -136,12 +136,11 @@ export class RequestHandler{
         }
     }
 
-    private cleanupFields(){
+    private cleanupFields() {
         this.apiBody = {}
         this.queryParams = {}
         this.apiHeaders = {}
         this.baseUrl = undefined
         this.apiPath = ''
-        
     }
 }

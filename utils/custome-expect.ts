@@ -22,7 +22,7 @@ export const expect = baseExpect.extend({
         try {
             baseExpect(received).toEqual(expected);
             pass = true;
-            if(this.isNot){
+            if (this.isNot) {
                 logs = apiLogger.getRecentLogs()
             }
         } catch (e: any) {

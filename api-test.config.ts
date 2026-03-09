@@ -9,14 +9,14 @@ const config = {
     userPassword: "1q2w3e4r5t6y7u8"
 }
 
-if(env === 'staging'){
+if (env === 'staging') {
     config.userEmail = 'test@test.com'
     config.userPassword = 'Welcome'
 }
 
-if(env === 'qa'){
+if (env === 'qa') {
     config.userEmail = 'test2@test.com'
     config.userPassword = '12334567'
 }
 
-export {config}
+export { config }
