@@ -1,6 +1,7 @@
 import { test } from '../utils/fixtures';
 import { expect } from '../utils/custome-expect'
 import { createToken } from '../helpers/createToken';
+import articlePostRequestPayload from '../request-objects/POST-article.json'
 
 
 test('Get articles', async ({ api }) => {
@@ -20,9 +21,10 @@ test('Get tags', async ({ api }) => {
 })
 
 test('Create and delete article', async ({ api }) => {
+  articlePostRequestPayload.article.title = 'post a new article'
   const createArticleResponse = await api
     .path('/articles')
-    .body({"article": {"title": "post a new article","description": "yoo back at ya","body": "something in here","tagList": []}})
+    .body(articlePostRequestPayload)
     .postRequest(201)
 
   expect(createArticleResponse.article.title).shouldEqual('post a new article')
