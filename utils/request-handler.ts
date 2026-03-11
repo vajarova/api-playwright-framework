@@ -1,81 +1,91 @@
 import { APIRequestContext } from "@playwright/test";
-import {expect} from '@playwright/test'
+import { expect } from '@playwright/test'
 import { APILogger } from "./logger";
 
-export class RequestHandler{
+export class RequestHandler {
 
     private request: APIRequestContext
     private logger: APILogger
-    private baseUrl: string;
+    private baseUrl: string | undefined;
     private defaultUrl: string;
     private apiPath: string = '';
     private queryParams: object = {};
     private apiHeaders: Record<string, string> = {};
     private apiBody: object = {};
+    private clearAuthFlag: boolean
+    private defaultAuthToken: string = ''
 
-    constructor(request: APIRequestContext, apiBaseUrl: string, logger: APILogger){
+    constructor(request: APIRequestContext, apiBaseUrl: string, logger: APILogger, authToken: string = '') {
         this.request = request
         this.defaultUrl = apiBaseUrl
         this.logger = logger
+        this.defaultAuthToken = authToken
     }
 
 
-    url(url: string){
+    url(url: string) {
         this.baseUrl = url;
         return this
     }
 
-    path(path: string){
+    path(path: string) {
         this.apiPath = path
         return this
     }
 
-    params(params: object){
+    params(params: object) {
         this.queryParams = params
         return this
     }
 
-    headers(headers: Record<string, string>){
+    headers(headers: Record<string, string>) {
         this.apiHeaders = headers
         return this
     }
 
-    body(body: object){
+    body(body: object) {
         this.apiBody = body
         return this
     }
 
-    async getRequest(statusCode: number){
+    clearAuth(){
+        this.clearAuthFlag = true
+        return this
+    }
+
+    async getRequest(statusCode: number) {
         const url = this.getUrl()
         //Use custom logger to capture request
-        this.logger.logRequest("GET", url, this.apiHeaders, this.apiBody)
+        this.logger.logRequest("GET", url, this.getHeaders(), this.apiBody)
         const response = await this.request.get(url, {
-            headers: this.apiHeaders
+            headers: this.getHeaders()
         })
+        this.cleanupFields()
 
         const actualStatus = response.status()
         const responseJson = await response.json()
         //Use custom logger to capture response
         this.logger.logResponse(actualStatus, responseJson)
         //Use custom status code assertion
-        this.statusCodeValidator(actualStatus,statusCode,this.getRequest)
+        this.statusCodeValidator(actualStatus, statusCode, this.getRequest)
         return responseJson
     }
 
-    async postRequest(statusCode: number){
+    async postRequest(statusCode: number) {
         const url = this.getUrl()
         //Use custom logger to capture request
-        this.logger.logRequest("POST", url, this.apiHeaders, this.apiBody)
+        this.logger.logRequest("POST", url, this.getHeaders(), this.apiBody)
         const response = await this.request.post(url, {
             data: this.apiBody,
-            headers: this.apiHeaders
+            headers: this.getHeaders()
         })
+        this.cleanupFields()
 
         const actualStatus = response.status()
         const responseJson = response.json()
-        
+
         //Use custom logger to capture response
-        this.logger.logResponse(actualStatus,responseJson)
+        this.logger.logResponse(actualStatus, responseJson)
 
         this.statusCodeValidator(actualStatus, statusCode, this.postRequest)
         return responseJson
@@ -84,51 +94,69 @@ export class RequestHandler{
     async putRequest(statusCode: number) {
         const url = this.getUrl()
         //Use custom logger to log request
-        this.logger.logRequest("PUT", url, this.apiHeaders, this.apiBody)
+        this.logger.logRequest("PUT", url, this.getHeaders(), this.apiBody)
         const response = await this.request.put(url, {
             data: this.apiBody,
-            headers: this.apiHeaders
+            headers: this.getHeaders()
         })
+        this.cleanupFields()
         const responseJson = response.json()
         const actualStatus = response.status()
 
         //Use custom logger to log response
-        this.logger.logResponse(actualStatus,responseJson)
+        this.logger.logResponse(actualStatus, responseJson)
 
         this.statusCodeValidator(actualStatus, statusCode, this.putRequest)
-        
+
         return responseJson
     }
 
-    async deleteRequest(statusCode: number){
+    async deleteRequest(statusCode: number) {
         const url = this.getUrl()
         //Use custom logger to log request
-        this.logger.logRequest("DELETE", url, this.apiHeaders)
-        const response = await this.request.delete(url,{
-            headers: this.apiHeaders
+        this.logger.logRequest("DELETE", url, this.getHeaders())
+        const response = await this.request.delete(url, {
+            headers: this.getHeaders()
         })
+        this.cleanupFields()
         const actualStatus = response.status()
         //Use custom logger to log response
         this.logger.logResponse(actualStatus)
 
         this.statusCodeValidator(actualStatus, statusCode, this.deleteRequest)
-        
+
     }
 
-    private getUrl(){
+    private getUrl() {
         const url = new URL(`${this.baseUrl ?? this.defaultUrl}${this.apiPath}`)
-        for(const [key, value] of Object.entries(this.queryParams)){
-            url.searchParams.append(key,value)
+        for (const [key, value] of Object.entries(this.queryParams)) {
+            url.searchParams.append(key, value)
         }
         return url.toString()
     }
 
-    private statusCodeValidator(actualStatus: number, expectedStatus: number, callingMethod:Function){
-        if(actualStatus !== expectedStatus){
+    private statusCodeValidator(actualStatus: number, expectedStatus: number, callingMethod: Function) {
+        if (actualStatus !== expectedStatus) {
             const logs = this.logger.getRecentLogs()
             const error = new Error(`Expected status ${expectedStatus} but got ${actualStatus} \n\n Recent API Activity: \n ${logs}`)
             Error.captureStackTrace(error, callingMethod)
             throw error
         }
+    }
+
+    private getHeaders(){
+        if(!this.clearAuthFlag){
+            this.apiHeaders['Authorization'] = this.apiHeaders['Authorization'] || this.defaultAuthToken
+        }
+        return this.apiHeaders
+    }
+
+    private cleanupFields() {
+        this.apiBody = {}
+        this.queryParams = {}
+        this.apiHeaders = {}
+        this.baseUrl = undefined
+        this.apiPath = ''
+        this.clearAuthFlag = false
     }
 }
